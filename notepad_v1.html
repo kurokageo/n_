@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>data.py | Notpad</title>
+  <link rel="icon" type="image/gif" href="favicon.gif">
+
+  <style>
+    :root {
+      /* Dark Purple Liquid Glass Palette */
+      --bg-base: #06040d;
+      --glass-surface: rgba(20, 13, 38, 0.65);
+      --glass-elevated: rgba(30, 20, 58, 0.88);
+      --glass-hover: rgba(147, 51, 234, 0.22);
+      --glass-border: rgba(192, 132, 252, 0.18);
+      --glass-highlight: rgba(255, 255, 255, 0.07);
+      
+      --text-primary: #f3e8ff;
+      --text-secondary: #b8a8d8;
+      --text-muted: #766598;
+      
+      --accent: #9333ea;
+      --accent-glow: rgba(147, 51, 234, 0.45);
+      --accent-hover: #a855f7;
+      --danger: #fb7185;
+      --success: #34d399;
+      --warning: #fbbf24;
+      
+      --blur: blur(22px);
+    }
+
+    body.light {
+      --bg-base: #f3e8ff;
+      --glass-surface: rgba(255, 255, 255, 0.72);
+      --glass-elevated: rgba(255, 255, 255, 0.94);
+      --glass-hover: rgba(147, 51, 234, 0.12);
+      --glass-border: rgba(126, 34, 206, 0.18);
+      --glass-highlight: rgba(255, 255, 255, 0.8);
+      
+      --text-primary: #1e1035;
+      --text-secondary: #4c3575;
+      --text-muted: #7e68a8;
+      
+      --accent: #7e22ce;
+      --accent-glow: rgba(126, 34, 206, 0.25);
+      --accent-hover: #6b21a8;
+      --danger: #e11d48;
+      --success: #059669;
+      --warning: #d97706;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 10% 15%, rgba(126, 34, 206, 0.3) 0%, transparent 45%),
+        radial-gradient(circle at 90% 85%, rgba(79, 70, 229, 0.26) 0%, transparent 48%);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .glass-panel {
+      background: var(--glass-surface);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 var(--glass-highlight);
+      border-radius: 8px;
+    }
+
+    /* Ultra-Compact Single Ribbon Header */
+    .topbar {
+      padding: 4px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      z-index: 30;
+      min-height: 38px;
+    }
+
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text-primary);
+      padding: 0 4px;
+      user-select: none;
+    }
+
+    .app-brand img {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+    }
+
+    .filename-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    body.light .filename-box {
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .filename-box:focus-within {
+      border-color: var(--accent-hover);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .filename-box input {
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 12px;
+      outline: none;
+      width: 135px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .dirty-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--warning);
+      display: none;
+    }
+
+    .dirty-dot.visible {
+      display: inline-block;
+    }
+
+    /* Compact Glass Buttons */
+    button.btn {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+
+    button.btn:hover {
+      background: var(--glass-hover);
+      border-color: var(--glass-border);
+    }
+
+    button.btn-primary {
+      background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%);
+      color: #ffffff;
+      border: 1px solid rgba(216, 180, 254, 0.3);
+      box-shadow: 0 2px 10px var(--accent-glow);
+    }
+
+    button.btn-primary:hover {
+      background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+    }
+
+    button.btn.active-toggle {
+      background: rgba(147, 51, 234, 0.3);
+      border-color: var(--accent-hover);
+      color: #fff;
+    }
+
+    svg.icon {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .divider {
+      width: 1px;
+      height: 16px;
+      background: var(--glass-border);
+      margin: 0 2px;
+    }
+
+    /* Dropdown Menus */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background: var(--glass-elevated);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      min-width: 235px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(192, 132, 252, 0.28);
+      border-radius: 8px;
+      z-index: 50;
+      top: calc(100% + 4px);
+      left: 0;
+      padding: 4px;
+    }
+
+    .dropdown-content button {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 7px 10px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 12px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dropdown-content button .menu-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropdown-content button .shortcut {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .dropdown-content button:hover {
+      background: var(--glass-hover);
+    }
+
+    .menu-divider {
+      height: 1px;
+      background: var(--glass-border);
+      margin: 3px 4px;
+    }
+
+    .dropdown.show .dropdown-content {
+      display: block;
+    }
+
+    /* Compact Status Badge */
+    .status-pill {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-pill.linked .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    /* Find & Replace Bar */
+    .find-bar {
+      display: none;
+      padding: 4px 8px;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .find-bar.active {
+      display: flex;
+    }
+
+    .find-bar input {
+      padding: 4px 8px;
+      border: 1px solid var(--glass-border);
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text-primary);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .find-bar input:focus {
+      border-color: var(--accent-hover);
+    }
+
+    /* Main Workspace */
+    .workspace {
+      display: flex;
+      flex: 1;
+      gap: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Compact Folder Sidebar */
+    .sidebar {
+      width: 185px;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 6px;
+    }
+
+    .sidebar.active {
+      display: flex;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 4px 6px;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 4px;
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-item {
+      padding: 5px 7px;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-item:hover {
+      background: var(--glass-hover);
+      color: var(--text-primary);
+    }
+
+    .file-item.active {
+      background: linear-gradient(90deg, rgba(147, 51, 234, 0.38), rgba(147, 51, 234, 0.1));
+      border-left: 2px solid var(--accent-hover);
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    /* Maximized Editor Surface */
+    .editor-wrapper {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .editor-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .line-numbers {
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text-muted);
+      padding: 10px 8px;
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      user-select: none;
+      border-right: 1px solid var(--glass-border);
+      overflow: hidden;
+      min-width: 38px;
+    }
+
+    textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 10px 12px;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      resize: none;
+      white-space: pre;
+      overflow: auto;
+      tab-size: 4;
+    }
+
+    textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    textarea.wrap {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    iframe.preview {
+      flex: 1;
+      border: none;
+      border-left: 1px solid var(--glass-border);
+      background: #ffffff;
+      display: none;
+    }
+
+    iframe.preview.active {
+      display: block;
+    }
+
+    /* Drag & Drop Overlay */
+    .drop-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(24, 14, 48, 0.85);
+      backdrop-filter: blur(8px);
+      border: 2px dashed var(--accent-hover);
+      border-radius: 8px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      z-index: 40;
+      pointer-events: none;
+    }
+
+    .drop-overlay.active {
+      display: flex;
+    }
+
+    /* Ultra-Slim Status Bar */
+    .statusbar {
+      padding: 3px 10px;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-secondary);
+      min-height: 24px;
+    }
+
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(192, 132, 252, 0.25); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(192, 132, 252, 0.5); }
+  </style>
+</head>
+<body>
+
+  <!-- Unified Single-Bar Header & Controls -->
+  <div class="topbar glass-panel">
+    <div class="app-brand">
+      <img src="favicon.gif" alt="" onerror="this.style.display='none'">
+      <span>Notpad</span>
+    </div>
+
+    <div class="filename-box" title="Edit filename (updates tab title & renames on save)">
+      <span class="dirty-dot" id="dirtyDot" title="Unsaved changes"></span>
+      <input type="text" id="fileNameInput" value="data.py" placeholder="filename.ext" oninput="updatePageTitle()">
+    </div>
+
+    <!-- File Menu -->
+    <div class="dropdown" id="fileDropdown">
+      <button class="btn" onclick="toggleDropdown('fileDropdown')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        File
+      </button>
+      <div class="dropdown-content">
+        <button onclick="createNewFile()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New File</span>
+          <span class="shortcut">Alt+N</span>
+        </button>
+        <button onclick="openFolder()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Open Folder (Rename Support)</span>
+        </button>
+        <button onclick="openSingleFile()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg> Open Single File</span>
+          <span class="shortcut">Ctrl+O</span>
+        </button>
+        <div class="menu-divider"></div>
+        <button onclick="clearEditor()" style="color: var(--danger);">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Clear Editor</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Save Menu -->
+    <div class="dropdown" id="saveDropdown">
+      <button class="btn btn-primary" onclick="toggleDropdown('saveDropdown')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save
+      </button>
+      <div class="dropdown-content">
+        <button onclick="overwriteOrRename(false)">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Overwrite / Rename on Disk</span>
+          <span class="shortcut">Ctrl+S</span>
+        </button>
+        <button onclick="downloadFile()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Copy</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Edit & Code Tools Menu -->
+    <div class="dropdown" id="toolsDropdown">
+      <button class="btn" onclick="toggleDropdown('toolsDropdown')">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Tools
+      </button>
+      <div class="dropdown-content">
+        <button onclick="toggleComment()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg> Toggle # Comment</span>
+          <span class="shortcut">Ctrl+/</span>
+        </button>
+        <button onclick="duplicateLine()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Duplicate Line</span>
+          <span class="shortcut">Ctrl+D</span>
+        </button>
+        <button onclick="goToLine()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 16 16 12 12 8"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Go to Line</span>
+          <span class="shortcut">Ctrl+G</span>
+        </button>
+        <div class="menu-divider"></div>
+        <button onclick="transformCase('upper')">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> UPPERCASE</span>
+        </button>
+        <button onclick="transformCase('lower')">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> lowercase</span>
+        </button>
+        <button onclick="trimWhitespace()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg> Trim Trailing Spaces</span>
+        </button>
+        <div class="menu-divider"></div>
+        <button onclick="sortLines()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Sort Lines A–Z</span>
+        </button>
+        <button onclick="removeDuplicateLines()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Remove Duplicate Lines</span>
+        </button>
+        <button onclick="insertTimestamp()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Insert Timestamp</span>
+        </button>
+        <button onclick="copyAllText()">
+          <span class="menu-left"><svg class="icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Copy All Text</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Inline Quick Actions -->
+    <button class="btn" onclick="document.execCommand('undo')" title="Undo (Ctrl+Z)">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+    </button>
+    <button class="btn" onclick="document.execCommand('redo')" title="Redo (Ctrl+Y)">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+    </button>
+    <button class="btn" id="findBtn" onclick="toggleFind()" title="Find & Replace (Ctrl+F)">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Find
+    </button>
+    <button class="btn" id="wrapBtn" onclick="toggleWrap()" title="Toggle Word Wrap">Wrap</button>
+    <button class="btn" id="previewBtn" onclick="togglePreview()" title="Live HTML/Markdown Split Preview">Split</button>
+    <button class="btn" id="autoSaveBtn" onclick="toggleAutoSave()" title="Auto-save linked file 1.5s after typing">Auto: Off</button>
+    <button class="btn" onclick="changeFontSize(-1)" title="Smaller Text">A-</button>
+    <button class="btn" onclick="changeFontSize(1)" title="Larger Text">A+</button>
+    <button class="btn" id="themeBtn" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span id="statusBadge">Unsaved</span>
+    </div>
+  </div>
+
+  <!-- Compact Find & Replace Bar -->
+  <div class="find-bar glass-panel" id="findBar">
+    <input type="text" id="findInput" placeholder="Find...">
+    <input type="text" id="replaceInput" placeholder="Replace with...">
+    <button class="btn" onclick="replaceNext()">Replace</button>
+    <button class="btn" onclick="replaceAll()">All</button>
+    <button class="btn" onclick="toggleFind()" style="margin-left: auto;">Close</button>
+  </div>
+
+  <!-- Maximized Workspace -->
+  <div class="workspace" id="workspace">
+    <div class="sidebar glass-panel" id="folderSidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title" id="folderNameTitle">Directory</div>
+        <button class="btn" style="padding:2px 5px;font-size:10px" onclick="refreshFileList()" title="Refresh">Sync</button>
+      </div>
+      <div id="fileList"></div>
+    </div>
+
+    <div class="editor-wrapper glass-panel">
+      <div class="drop-overlay" id="dropOverlay">Drop file here to open in Notpad</div>
+      <div class="editor-container">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <textarea id="editor" spellcheck="false" placeholder="Start typing, drag & drop a file, or open a folder..."></textarea>
+      </div>
+      <iframe class="preview" id="previewPane"></iframe>
+    </div>
+  </div>
+
+  <!-- Slim Status Bar -->
+  <div class="statusbar glass-panel">
+    <div class="status-group">
+      <span id="cursorPos">Ln 1, Col 1</span>
+      <span id="selectionInfo"></span>
+    </div>
+    <div class="status-group">
+      <span>Tab: 4 Spaces</span>
+      <span id="wordCount">0 words | 1 line | 0 chars</span>
+    </div>
+  </div>
+
+  <input type="file" id="fallbackFileInput" style="display:none" onchange="handleFallbackOpen(event)">
+
+  <script>
+    const editor = document.getElementById('editor');
+    const lineNumbers = document.getElementById('lineNumbers');
+    const fileNameInput = document.getElementById('fileNameInput');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusPill = document.getElementById('statusPill');
+    const previewPane = document.getElementById('previewPane');
+    const folderSidebar = document.getElementById('folderSidebar');
+    const fileListEl = document.getElementById('fileList');
+    const dirtyDot = document.getElementById('dirtyDot');
+
+    let dirHandle = null;
+    let originalFileHandle = null;
+    let originalFileName = null;
+    let fontSize = 13;
+    let autoSaveEnabled = false;
+    let autoSaveTimer = null;
+    let isDirty = false;
+
+    function setDirty(state) {
+      isDirty = state;
+      dirtyDot.classList.toggle('visible', state);
+      updatePageTitle();
+    }
+
+    function updatePageTitle() {
+      const currentName = fileNameInput.value.trim() || "untitled";
+      document.title = `${isDirty ? '• ' : ''}${currentName} | Notpad`;
+    }
+
+    // Warn before closing tab with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    // --- DROPDOWNS ---
+    function toggleDropdown(id) {
+      document.querySelectorAll('.dropdown').forEach(d => {
+        if (d.id !== id) d.classList.remove('show');
+      });
+      document.getElementById(id).classList.toggle('show');
+    }
+
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+      }
+    });
+
+    // --- FILE OPERATIONS ---
+    function createNewFile() {
+      if (isDirty && !confirm("Discard unsaved changes and create a new file?")) return;
+      originalFileHandle = null;
+      originalFileName = null;
+      editor.value = "";
+      fileNameInput.value = "untitled.py";
+      setDirty(false);
+      
+      if (dirHandle) {
+        statusBadge.textContent = `New in: ${dirHandle.name}`;
+      } else {
+        statusBadge.textContent = "Unsaved";
+        statusPill.classList.remove('linked');
+      }
+      updateStats();
+    }
+
+    function clearEditor() {
+      if (!editor.value || confirm("Clear all text in the editor?")) {
+        editor.value = "";
+        setDirty(true);
+        updateStats();
+      }
+    }
+
+    async function openFolder() {
+      if (!('showDirectoryPicker' in window)) {
+        alert("Folder access requires Chrome or Edge over HTTPS. Use 'Open Single File' instead.");
+        return;
+      }
+      try {
+        dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        document.getElementById('folderNameTitle').textContent = dirHandle.name;
+        folderSidebar.classList.add('active');
+        statusPill.classList.add('linked');
+        statusBadge.textContent = `Folder: ${dirHandle.name}`;
+        await refreshFileList();
+      } catch (err) {
+        if (err.name !== 'AbortError') alert("Could not open folder: " + err.message);
+      }
+    }
+
+    async function refreshFileList() {
+      if (!dirHandle) return;
+      fileListEl.innerHTML = "";
+      const entries = [];
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'file') entries.push(entry);
+      }
+      entries.sort((a, b) => a.name.localeCompare(b.name));
+      
+      for (const entry of entries) {
+        const item = document.createElement('div');
+        item.className = 'file-item' + (entry.name === originalFileName ? ' active' : '');
+        item.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg> <span>${entry.name}</span>`;
+        item.onclick = () => loadFileFromFolder(entry);
+        fileListEl.appendChild(item);
+      }
+    }
+
+    async function loadFileFromFolder(fileHandle) {
+      if (isDirty && !confirm(`Discard unsaved changes in ${fileNameInput.value}?`)) return;
+      try {
+        originalFileHandle = fileHandle;
+        originalFileName = fileHandle.name;
+        const file = await fileHandle.getFile();
+        editor.value = await file.text();
+        fileNameInput.value = file.name;
+        setDirty(false);
+        statusBadge.textContent = file.name;
+        statusPill.classList.add('linked');
+        updateStats();
+        await refreshFileList();
+      } catch (err) {
+        alert("Error reading file: " + err.message);
+      }
+    }
+
+    async function openSingleFile() {
+      if ('showOpenFilePicker' in window) {
+        try {
+          const [handle] = await window.showOpenFilePicker();
+          dirHandle = null;
+          folderSidebar.classList.remove('active');
+          originalFileHandle = handle;
+          originalFileName = handle.name;
+          const file = await handle.getFile();
+          editor.value = await file.text();
+          fileNameInput.value = file.name;
+          setDirty(false);
+          statusBadge.textContent = file.name;
+          statusPill.classList.add('linked');
+          updateStats();
+        } catch (err) {
+          if (err.name !== 'AbortError') alert("Error opening file: " + err.message);
+        }
+      } else {
+        document.getElementById('fallbackFileInput').click();
+      }
+    }
+
+    function handleFallbackOpen(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      loadDroppedOrFallbackFile(file);
+    }
+
+    function loadDroppedOrFallbackFile(file) {
+      dirHandle = null;
+      folderSidebar.classList.remove('active');
+      originalFileHandle = null;
+      originalFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        editor.value = e.target.result;
+        fileNameInput.value = file.name;
+        setDirty(false);
+        statusBadge.textContent = "Loaded (Download to save)";
+        statusPill.classList.remove('linked');
+        updateStats();
+      };
+      reader.readAsText(file);
+    }
+
+    // --- DRAG & DROP SUPPORT ---
+    const workspace = document.getElementById('workspace');
+    const dropOverlay = document.getElementById('dropOverlay');
+
+    workspace.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropOverlay.classList.add('active');
+    });
+
+    workspace.addEventListener('dragleave', (e) => {
+      if (!workspace.contains(e.relatedTarget)) {
+        dropOverlay.classList.remove('active');
+      }
+    });
+
+    workspace.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropOverlay.classList.remove('active');
+      
+      // Try File System Access handle first if available
+      if (e.dataTransfer.items && e.dataTransfer.items[0].getAsFileSystemHandle) {
+        try {
+          const handle = await e.dataTransfer.items[0].getAsFileSystemHandle();
+          if (handle.kind === 'file') {
+            dirHandle = null;
+            folderSidebar.classList.remove('active');
+            originalFileHandle = handle;
+            originalFileName = handle.name;
+            const file = await handle.getFile();
+            editor.value = await file.text();
+            fileNameInput.value = file.name;
+            setDirty(false);
+            statusBadge.textContent = file.name;
+            statusPill.classList.add('linked');
+            updateStats();
+            return;
+          }
+        } catch (_) {}
+      }
+      if (e.dataTransfer.files.length > 0) {
+        loadDroppedOrFallbackFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // --- OVERWRITE & RENAME ---
+    async function overwriteOrRename(isAuto = false) {
+      const targetName = fileNameInput.value.trim();
+      if (!targetName) {
+        if (!isAuto) alert("Please enter a valid filename in the top bar.");
+        return;
+      }
+
+      if (dirHandle) {
+        try {
+          const newHandle = await dirHandle.getFileHandle(targetName, { create: true });
+          const writable = await newHandle.createWritable();
+          await writable.write(editor.value);
+          await writable.close();
+
+          if (originalFileName && originalFileName !== targetName) {
+            try {
+              await dirHandle.removeEntry(originalFileName);
+              statusBadge.textContent = `Renamed → ${targetName}`;
+            } catch (delErr) {
+              statusBadge.textContent = `Saved ${targetName}`;
+            }
+          } else {
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            statusBadge.textContent = `${isAuto ? 'Auto-saved' : 'Saved'} ${time}`;
+          }
+
+          originalFileHandle = newHandle;
+          originalFileName = targetName;
+          setDirty(false);
+          await refreshFileList();
+          return;
+        } catch (err) {
+          if (!isAuto) alert("Folder save failed: " + err.message);
+          return;
+        }
+      }
+
+      if (originalFileHandle) {
+        try {
+          const writable = await originalFileHandle.createWritable();
+          await writable.write(editor.value);
+          await writable.close();
+          const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          statusBadge.textContent = `${isAuto ? 'Auto-saved' : 'Saved'} ${time}`;
+          setDirty(false);
+          return;
+        } catch (err) {
+          if (!isAuto) alert("Overwrite failed: " + err.message);
+          return;
+        }
+      }
+
+      if (!isAuto) {
+        alert("No file or folder is linked! Use File → Open Folder / Open File first, or click Download Copy.");
+      }
+    }
+
+    function downloadFile() {
+      const name = fileNameInput.value.trim() || "data.py";
+      const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+      setDirty(false);
+      statusBadge.textContent = `Downloaded ${name}`;
+    }
+
+    // --- CODE & QOL FEATURES ---
+    function toggleAutoSave() {
+      autoSaveEnabled = !autoSaveEnabled;
+      const btn = document.getElementById('autoSaveBtn');
+      btn.classList.toggle('active-toggle', autoSaveEnabled);
+      btn.textContent = `Auto: ${autoSaveEnabled ? 'On' : 'Off'}`;
+    }
+
+    function goToLine() {
+      const totalLines = editor.value.split('\n').length;
+      const input = prompt(`Jump to line (1 - ${totalLines}):`);
+      const lineNum = parseInt(input, 10);
+      if (!lineNum || lineNum < 1 || lineNum > totalLines) return;
+      
+      const lines = editor.value.split('\n');
+      let pos = 0;
+      for (let i = 0; i < lineNum - 1; i++) pos += lines[i].length + 1;
+      
+      editor.focus();
+      editor.setSelectionRange(pos, pos);
+      updateCursor();
+    }
+
+    function duplicateLine() {
+      const val = editor.value;
+      const start = editor.selectionStart;
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      let lineEnd = val.indexOf('\n', start);
+      if (lineEnd === -1) lineEnd = val.length;
+      
+      const lineText = val.substring(lineStart, lineEnd);
+      editor.value = val.substring(0, lineEnd) + '\n' + lineText + val.substring(lineEnd);
+      editor.selectionStart = editor.selectionEnd = lineEnd + 1 + (start - lineStart);
+      setDirty(true);
+      updateStats();
+    }
+
+    function toggleComment() {
+      const val = editor.value;
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      let lineEnd = val.indexOf('\n', end);
+      if (lineEnd === -1) lineEnd = val.length;
+
+      const selectedBlock = val.substring(lineStart, lineEnd);
+      const lines = selectedBlock.split('\n');
+      const allCommented = lines.every(l => l.trim().startsWith('#'));
+
+      const updated = lines.map(l => {
+        if (allCommented) return l.replace(/^(\s*)#\s?/, '$1');
+        return l.replace(/^(\s*)/, '$1# ');
+      }).join('\n');
+
+      editor.value = val.substring(0, lineStart) + updated + val.substring(lineEnd);
+      editor.setSelectionRange(lineStart, lineStart + updated.length);
+      setDirty(true);
+      updateStats();
+    }
+
+    function transformCase(mode) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      if (start === end) return;
+      const selected = editor.value.substring(start, end);
+      const converted = mode === 'upper' ? selected.toUpperCase() : selected.toLowerCase();
+      editor.value = editor.value.substring(0, start) + converted + editor.value.substring(end);
+      editor.setSelectionRange(start, end);
+      setDirty(true);
+      updateStats();
+    }
+
+    function trimWhitespace() {
+      editor.value = editor.value.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
+      setDirty(true);
+      updateStats();
+    }
+
+    async function copyAllText() {
+      await navigator.clipboard.writeText(editor.value);
+      statusBadge.textContent = "Copied to clipboard";
+    }
+
+    function sortLines() {
+      const lines = editor.value.split('\n');
+      editor.value = lines.sort((a, b) => a.localeCompare(b)).join('\n');
+      setDirty(true);
+      updateStats();
+    }
+
+    function removeDuplicateLines() {
+      const lines = editor.value.split('\n');
+      editor.value = [...new Set(lines)].join('\n');
+      setDirty(true);
+      updateStats();
+    }
+
+    function insertTimestamp() {
+      const stamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      const start = editor.selectionStart;
+      editor.value = editor.value.substring(0, start) + stamp + editor.value.substring(editor.selectionEnd);
+      editor.selectionStart = editor.selectionEnd = start + stamp.length;
+      setDirty(true);
+      updateStats();
+    }
+
+    // --- SMART KEYBOARD HANDLERS (Auto-indent, Auto-close pairs, Shortcuts) ---
+    const PAIRS = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+
+    editor.addEventListener('keydown', function(e) {
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      const val = this.value;
+
+      // Tab -> 4 spaces
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        this.value = val.substring(0, start) + "    " + val.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+        setDirty(true);
+        updateStats();
+        return;
+      }
+
+      // Smart Enter -> Preserve indentation (+4 spaces after ':')
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+        const currentLine = val.substring(lineStart, start);
+        const indentMatch = currentLine.match(/^\s*/);
+        let indent = indentMatch ? indentMatch[0] : '';
+        if (currentLine.trimEnd().endsWith(':')) indent += '    ';
+        
+        this.value = val.substring(0, start) + '\n' + indent + val.substring(end);
+        this.selectionStart = this.selectionEnd = start + 1 + indent.length;
+        setDirty(true);
+        updateStats();
+        return;
+      }
+
+      // Auto-close brackets & quotes
+      if (PAIRS[e.key] && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        const selected = val.substring(start, end);
+        const closeChar = PAIRS[e.key];
+        this.value = val.substring(0, start) + e.key + selected + closeChar + val.substring(end);
+        this.setSelectionRange(start + 1, end + 1);
+        setDirty(true);
+        updateStats();
+        return;
+      }
+
+      // Shortcuts
+      if ((e.ctrlKey || e.metaKey)) {
+        const key = e.key.toLowerCase();
+        if (key === 's') { e.preventDefault(); overwriteOrRename(false); }
+        else if (key === 'o') { e.preventDefault(); openSingleFile(); }
+        else if (key === 'g') { e.preventDefault(); goToLine(); }
+        else if (key === 'f') { e.preventDefault(); toggleFind(); }
+        else if (key === 'd') { e.preventDefault(); duplicateLine(); }
+        else if (key === '/') { e.preventDefault(); toggleComment(); }
+      }
+      if (e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        createNewFile();
+      }
+    });
+
+    // --- STATS & VIEW ---
+    function updateStats() {
+      const text = editor.value;
+      const lines = text.split('\n');
+      lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
+      
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const lineLabel = lines.length === 1 ? "1 line" : `${lines.length} lines`;
+      document.getElementById('wordCount').textContent = `${words} words | ${lineLabel} | ${text.length} chars`;
+      
+      if (previewPane.classList.contains('active')) {
+        previewPane.srcdoc = text;
+      }
+
+      if (autoSaveEnabled && (dirHandle || originalFileHandle)) {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => overwriteOrRename(true), 1500);
+      }
+    }
+
+    function updateCursor() {
+      const pos = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const lines = editor.value.substr(0, pos).split('\n');
+      document.getElementById('cursorPos').textContent = `Ln ${lines.length}, Col ${lines[lines.length - 1].length + 1}`;
+      document.getElementById('selectionInfo').textContent = end > pos ? `(${end - pos} selected)` : '';
+    }
+
+    editor.addEventListener('input', () => { setDirty(true); updateStats(); });
+    editor.addEventListener('click', updateCursor);
+    editor.addEventListener('keyup', updateCursor);
+    editor.addEventListener('scroll', () => { lineNumbers.scrollTop = editor.scrollTop; });
+
+    function changeFontSize(delta) {
+      fontSize = Math.max(10, Math.min(28, fontSize + delta));
+      editor.style.fontSize = fontSize + 'px';
+      lineNumbers.style.fontSize = fontSize + 'px';
+    }
+
+    function toggleWrap() {
+      editor.classList.toggle('wrap');
+      document.getElementById('wrapBtn').classList.toggle('active-toggle');
+    }
+    
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      const isLight = document.body.classList.contains('light');
+      document.getElementById('themeBtn').innerHTML = isLight
+        ? `<svg class="icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+        : `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+    }
+
+    function toggleFind() {
+      const bar = document.getElementById('findBar');
+      bar.classList.toggle('active');
+      document.getElementById('findBtn').classList.toggle('active-toggle', bar.classList.contains('active'));
+      if (bar.classList.contains('active')) document.getElementById('findInput').focus();
+    }
+
+    function togglePreview() {
+      previewPane.classList.toggle('active');
+      document.getElementById('previewBtn').classList.toggle('active-toggle', previewPane.classList.contains('active'));
+      if (previewPane.classList.contains('active')) previewPane.srcdoc = editor.value;
+    }
+
+    function replaceNext() {
+      const find = document.getElementById('findInput').value;
+      const replace = document.getElementById('replaceInput').value;
+      if (!find) return;
+      editor.value = editor.value.replace(find, replace);
+      setDirty(true);
+      updateStats();
+    }
+
+    function replaceAll() {
+      const find = document.getElementById('findInput').value;
+      const replace = document.getElementById('replaceInput').value;
+      if (!find) return;
+      editor.value = editor.value.split(find).join(replace);
+      setDirty(true);
+      updateStats();
+    }
+
+    updatePageTitle();
+    updateStats();
+  </script>
+</body>
+</html>
